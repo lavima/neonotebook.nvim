@@ -1,0 +1,1 @@
+# neonotebook.nvim
