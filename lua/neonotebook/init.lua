@@ -13,7 +13,9 @@ local convert_to_script = function(filepath)
 
   local script_filepath = vim.fn.fnamemodify(filepath, ':r') .. '.' .. extension
 
-  local command = 'python3 ../../python/ipynb/convert.py ' .. filepath .. ' ' .. script_filepath
+  local plugin_dir = require('utils').get_plugin_dir()
+
+  local command = 'python3 convert.py ' .. filepath .. ' ' .. script_filepath
   local output = vim.fn.system(command)
 
   if vim.v.shell_error ~= 0 then
