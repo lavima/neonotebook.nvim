@@ -13,6 +13,7 @@ local convert_to_script = function(filepath)
 
   local script_filepath = vim.fn.fnamemodify(filepath, ':r') .. '.' .. extension
 
+  echo(debug.getinfo(1,'S').source:sub(2))
   local plugin_dir = require('utils').get_plugin_dir()
 
   local command = 'python3 convert.py ' .. filepath .. ' ' .. script_filepath
