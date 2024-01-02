@@ -40,10 +40,8 @@ end
 
 utils.available_repls = find_supported_repls()
 
-utils.get_plugin_dir = function()
-  local path = debug.getinfo(1,'S').source:sub(2)
-  echo(path)
-  return path
+utils.get_lua_dir = function()
+  return debug.getinfo(1,'S').source:sub(2):match('.*/')
 end
 
 return utils

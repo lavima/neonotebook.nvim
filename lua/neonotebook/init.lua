@@ -1,8 +1,12 @@
 local M = {}
 
 local language_extensions = {
-  python = "py"
+  python = ".py"
 }
+
+local outputs_extension = '.ipyout'
+
+local shellescape = vim.fn.shellescape
 
 local convert_to_script = function(filepath)
   local metadata = vim.json.decode(io.open(filepath, "r"):read "a")["metadata"]
@@ -10,25 +14,23 @@ local convert_to_script = function(filepath)
   local language = metadata.kernelspec.language
   local extension = language_extensions[language]
 
+  local script_filepath = vim.fn.fnamemodify(filepath, ':r') .. extension
+  local outputs_filepath = vim.fn.fnamemodify(filepath, ':r') .. outputs_extension
 
-  local script_filepath = vim.fn.fnamemodify(filepath, ':r') .. '.' .. extension
+  local convert_script = require('neonotebook.utils').get_lua_dir() .. '../../python/ipynb/convert.py'
+  local command = 'python3 ' .. shellescape(convert_script) .. ' ' .. shellescape(filepath) .. 
+    ' --output ' .. shellescape(script_filepath) .. ' --cell_outputs ' .. outputs_filepath
 
-  echo(debug.getinfo(1,'S').source:sub(2))
-  local plugin_dir = require('utils').get_plugin_dir()
-
-  local command = 'python3 convert.py ' .. filepath .. ' ' .. script_filepath
   local output = vim.fn.system(command)
-
   if vim.v.shell_error ~= 0 then
-    print(output)
-    vim.api.nvim_err_writeln(command .. ": " .. vim.v.shell_error)
+    vim.api.nvim_err_writeln(command .. ": " .. output .. ": " .. vim.v.shell_error)
     return
   end
 
   if vim.fn.filereadable(script_filepath) then
     local script_content = vim.fn.readfile(script_filepath)
 
-    -- Replace the buffer content with the jupytext content
+    -- Replace the buffer content with the script content
     vim.api.nvim_buf_set_lines(0, 0, -1, false, script_content)
   else
     error "Couldn't find script file."
@@ -37,7 +39,7 @@ local convert_to_script = function(filepath)
 
   vim.api.nvim_create_autocmd({ "BufWriteCmd", "FileWriteCmd" }, {
     pattern = "<buffer>",
-    group = "jupytext-nvim",
+    group = "neonotebook",
     callback = function(ev)
       write_to_ipynb(ev.match, output_extension)
     end,
