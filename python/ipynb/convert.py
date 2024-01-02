@@ -2,6 +2,7 @@ import os
 import argparse
 import json
 from base64 import standard_b64encode
+from base64 import b64decode
 
 language_information = {
     'python': { 'extension':'py', 'kernel':'python3' }
@@ -79,7 +80,7 @@ def notebook_to_script(filepath, output, output_cell_outputs):
 
     save_json(cell_outputs, output_cell_outputs)
 
-def image_show_string(image_data):
+def image_show_string(encoded_image_data):
 
     def serialize_gr_command(payload, **cmd):
         cmd = ','.join(f'{k}={v}' for k, v in cmd.items())
@@ -95,7 +96,6 @@ def image_show_string(image_data):
 
     def write_chunked(data, **cmd):
         ans = []
-        data = standard_b64encode(data)
         while data:
             chunk, data = data[:4096], data[4096:]
             m = 1 if data else 0
@@ -103,7 +103,7 @@ def image_show_string(image_data):
             cmd.clear()
         return b''.join(ans)
 
-    return write_chunked(image_data, a='T',f=100)
+    return write_chunked(encoded_image_data.encode('ascii'), a='T',f=100).decode('ascii')
 
 
 def outputs_to_script(filepath, output):
@@ -129,8 +129,7 @@ def outputs_to_script(filepath, output):
                 content = '\n{0}'.format(''.join(cell_output['text'])) 
             elif output_type == 'display_data':
                 image_data = cell_output['data']['image/png']
-                content = image_show_string(image_data.encode('utf-8')).decode('utf-8')
-                #content = (b'\n\033_Ga=T,f=100,t=f;'+ '~/Documents/RiSchedule/test.png'.encode('utf-8') + b'\033\\').decode('utf-8')
+                content = image_show_string(image_data)
             elif output_type == 'error':
                 content = '\n'            
             else:
